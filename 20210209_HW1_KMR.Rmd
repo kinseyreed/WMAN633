@@ -1,6 +1,6 @@
 ---
 title: "20210208_QE_HW1"
-author: "Kinsey Reed"
+author: "Kinsey M Reed"
 date: "2/8/2021"
 output: html_document
 ---
