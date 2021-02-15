@@ -1,0 +1,119 @@
+---
+title: "20210214_QE_HW2"
+author: "kms"
+date: "2/14/2021"
+output: html_document
+---
+This homework is all about verifying output of a fitted linear model. We will use the same beach dataset from last homework. As before, start by fitting a model with OpenBeach as the response, and include an interaction between Year and BeachID.
+
+
+1. Calculate the residuals. Use the summary() function applied to your numeric vector of residuals to verify that this matches the Residuals: quantiles reported from the summary of your fitted model. Plot a histogram of your residuals. Do they appear reasonably Gaussian? (we will go into detail on formal model checking later in the semester) (5 points)
+```{q1}
+beach <- read.csv("beach.csv")
+fit <- lm(formula = OpenBeach ~ BeachID * Year, data = beach)
+fit
+betas <- coef(fit)
+betas
+#note that the slope coef changed from hw1 from betas[2] to betas[4] (not sure why)
+
+#calculate residuals
+residuals1 <- resid(fit)
+
+summary(residuals1)
+summary(fit)
+#use summary() to compare numeric residual vector to quartiles in fitted model
+#they match
+#now plot histogram
+hist(residuals1)
+#Seems pretty lopsided to me. I suppose it could be considered "reasonably Gaussian" though.
+
+```
+
+2. Calculate test statistics for your regression coefficients. Verify by comparing to test statistics reported from model output. (5 points)
+
+``` {q2}
+#test statistics for regression coefficients
+#est for slope coef for beach A, B, and C
+betas
+slope_coefA <- betas[4] #Year
+slope_coefB <- betas[5] #BeachIDB:Year
+slope_coefC <- betas[6] #BeachIDC:Year
+
+#est for std error
+std_errorA <- summary(fit)[['coefficients']]['Year', 'Std. Error']
+std_errorA
+std_errorB <- summary(fit)[['coefficients']]['BeachIDB:Year', 'Std. Error']
+std_errorC <- summary(fit)[['coefficients']]['BeachIDC:Year', 'Std. Error']
+
+#null_hypothesis
+null_hyp <- 0
+
+
+test_statA <- (slope_coefA - null_hyp) / std_errorA
+test_statA #-14.443
+test_statB <- (slope_coefB - null_hyp) / std_errorB
+test_statB #9.478
+test_statC <- (slope_coefC - null_hyp) / std_errorC
+test_statC #7.992408
+#compare to model output stats
+summary(fit)
+# t values: A = -14.443, B = 9.478, C = 7.992
+```
+
+3. Calculate p-values for your regression coefficients. Verify by comparing to p-values reported from model output. What are the associated null hypotheses? Do you reject or fail to reject these null hypotheses? Note: in the lecture slides I reported test statistics are t-distributed with n − 2 degrees of freedom. More generally, these test statistics are t-distributed with n − k degrees of freedom, where k is the number of regression coefficients in your linear model. (5 points)
+```{q3}
+#calc p values for regression coefs
+#df = n - k (k is # of regression coef from model)
+nrow(beach) #62
+ #6 coefficients total in original model
+#df = 62 - 6, = 56
+pt(test_statA, df = 56) + (1 - pt(abs(test_statA), df = 56)) #7.79e-21
+pt(-test_statB, df = 56) + (1 - pt(test_statB, df = 56)) #3.07e-13
+pt(-test_statC, df = 56) + (1 - pt(test_statC, df = 56)) #7.96e-11
+ 
+#compare to summary output
+summary(fit) 
+# BeachA p = 2.2e-16
+# BeachB p = 3.07e-13
+# BeachC p = 7.96e-11
+#B and C are the same, A is different but still very tiny. Not sure why or if it matters since still super small.
+
+#What is the associated null hyp? Reject or fail to reject?
+#The associated null hypothesis is that amount of open beach area does not change significantly over the years.
+#Here, we reject that null hypothesis. 
+```
+
+4. Select a single regression coefficient (your choice) and devise a null hypothesis that is different from the default in lm(). Report the test statistics, your p-value, and whether you reject or fail to reject your null hypothesis. (5 points)
+```{q4}
+#Using the slope coefficient for Beach A, I want to test the null hypothesis that B1 = 108 (i.e. the median open beach area) 
+#against the alternative that B1 < 108 (that a random value is under 108 ha)
+ts_108 <- (betas[4] - 108) / std_errorA
+ts_108 # test statistic = -99.38
+
+pt(ts_108, df = 56)
+#p val = 5.73e-65
+
+#So here, we reject the null hypothesis. 
+
+```
+5. Interpret output of your fitted model. Tell me how beach area does (or does not change) through time at each of the 3 beaches.
+
+```{q5}
+#essentially the same question as q5 in hw1?
+summary(fit)
+fit
+#BeachA
+#rate of change (slope) is equal to:
+betas[4]
+#= -18.36 which means that Beach A looses approximately 18.36 ha of open beach each year.
+#BeachB
+#rate of change (slope) is equal to:
+betas[4] + betas[5]
+#= -1.32 meaning that Beach B looses approximately 1.32 ha of open beach each year.
+#BeachC
+#rate of change (slope) is equal to :
+betas[4] + betas[6]
+#=-3.99 meaing that Beach C looses approximately 3.99 ha of open beach each year.    
+
+#all have p-values <<< 0.05 so reject the null hypothesis that the beaches do not lose open beach area over time. There is a significant loss of open beach area over time in all 3 beaches, although Beach A is much more severe.
+```
