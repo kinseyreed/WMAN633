@@ -16,7 +16,7 @@ betas <- coef(fit)
 betas
 #note that the slope coef changed from hw1 from betas[2] to betas[4] (not sure why)
 
-#calculate residuals
+##calculate residuals
 residuals1 <- resid(fit)
 
 summary(residuals1)
