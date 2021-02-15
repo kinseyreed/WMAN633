@@ -1,0 +1,125 @@
+---
+title: "20210208_QE_HW1"
+author: "Kinsey M Reed"
+date: "2/8/2021"
+output: html_document
+---
+
+
+"This data were obtained from annual surveys of unvegetated beach area of saline lakes in North Dakota. Piping plovers nest on these beaches, but only in unvegetated areas. Therefore, maintaining open beaches is important for conservation of this sensitive species. Use linear regression to determine how beach areas changes through time. The variables are:
+
+• BeachID: categorical variable, unique identification for each beach
+• Year: continuous variable, year the beach area was measured
+• OpenBeach: continuous variable, the area in hectares of open beach
+
+
+1. Import the “beach.csv” dataset into R and examine the first few rows of data (5 points)
+
+``` {r q1}
+#setwd(choose.dir())
+
+beach <- read.csv("beach.csv")
+
+head(beach)
+
+```
+
+2. Fit a model that includes interactions between Year and BeachID. Report estimates of all coefficients
+(5 points)
+
+``` {r q2}
+
+fit <- lm(formula = OpenBeach ~ BeachID * Year, data = beach)
+
+fit
+
+betas <- coef(fit)
+
+betas
+
+```
+
+3. Predict the beach area at all three beaches in 1992 (5 points)
+
+``` {r q3}
+
+#BA at all 3 beaches in 1992 (first yr)
+#y = beta0 + (beta1*year) + (beta2*BeachID) + (beta3*year*BeachID)
+#BeachID is categorical (dummy coding) 
+
+#BEACH A size in 1992
+#coef "absorbed into intercept"
+
+beachA <- (betas[2] * 1992) + betas[1]
+beachA
+
+
+#BEACH B size in 1992 
+#y = intercept_parameter + (years_coeff + interaction_coeff(forB)) * 1992(=predictor) + coeff_beachIDB
+
+beachB <- betas[1] + (betas[2] + betas[5]) * 1992 + betas[3]
+
+beachB
+
+#BEACH C size in 1992 
+#y = intercept_par + (years_coeff + yearsxBeachIDC_coeff) * 1992 + beachIDC_coeff
+
+beachC <- betas[1] + (betas[2] + betas [6]) * 1992 + betas[4]
+beachC
+
+```
+
+4. Plot the predicted area of each beach across ll years (5 points)
+
+```{r q4}
+#BeachA
+area_11yrA <- betas[2] * (1992:2003) + betas[1]
+area_11yrA
+
+#BeachB
+area_11yrB <- betas[1] + (betas[2] + betas[5]) * (1992:2003) + betas[3]
+area_11yrB
+
+#BeachC
+area_11yrC <- betas[1] + (betas[2] + betas[6]) * (1992:2003) + betas[4]
+area_11yrC
+
+#plot
+x <- seq(from = 1992, to = 2003, length.out = 12)
+
+plot(beach$Year, beach$OpenBeach, xlab = 'Year', ylab = 'Open Beach Area', xlim = c(1992,2003))
+     lines(x = x, y = area_11yrA)
+     lines(x = x, y = area_11yrB, col = "Blue")
+     lines(x = x, y = area_11yrC, col = "Red")
+     legend(2000, 415, c("Beach A", "Beach B", "Beach C"),
+            col = c("Black", "Blue", "Red"), lty = 1, cex = 0.8)
+```
+
+
+5. Interpret the rate of beach area change at each of the 3 beaches (5 points)
+
+```{r q5}
+#BeachA
+
+#rate of change (slope) is equal to:
+betas[2]
+#= -18.36 which means that Beach A looses 18.36 ha of open beach per year.
+
+#BeachB
+
+#rate of change (slope) is equal to:
+betas[2] + betas[5]
+#= -1.32 meaning that Beach B looses 1.32 ha of open beach per year.
+
+#BeachC
+
+#rate of change (slope) is equal to :
+betas[2] + betas[6]
+#=-3.99 meaing that Beach C looses 3.99 ha of open beach per year.    
+```
+
+
+
+
+
+
