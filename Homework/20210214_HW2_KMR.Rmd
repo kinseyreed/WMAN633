@@ -16,7 +16,7 @@ betas <- coef(fit)
 betas
 #note that the slope coef changed from hw1 from betas[2] to betas[4] (not sure why)
 
-##calculate residuals
+#calculate residuals
 residuals1 <- resid(fit)
 
 summary(residuals1)
@@ -25,7 +25,7 @@ summary(fit)
 #they match
 #now plot histogram
 hist(residuals1)
-#Seems pretty lopsided to me. I suppose it could be considered "reasonably Gaussian" though.
+#Seems pretty lopsided to me, but I suppose it could be considered "reasonably Gaussian".
 
 ```
 
@@ -35,7 +35,7 @@ hist(residuals1)
 #test statistics for regression coefficients
 #est for slope coef for beach A, B, and C
 betas
-slope_coefA <- betas[4] #Year
+slope_coefA <- betas[4] #Year (negative)
 slope_coefB <- betas[5] #BeachIDB:Year
 slope_coefC <- betas[6] #BeachIDC:Year
 
@@ -67,16 +67,15 @@ summary(fit)
 nrow(beach) #62
  #6 coefficients total in original model
 #df = 62 - 6, = 56
-pt(test_statA, df = 56) + (1 - pt(abs(test_statA), df = 56)) #7.79e-21
-pt(-test_statB, df = 56) + (1 - pt(test_statB, df = 56)) #3.07e-13
-pt(-test_statC, df = 56) + (1 - pt(test_statC, df = 56)) #7.96e-11
+pt(-1 * abs(test_statA), df = 56)*2 #1.56e-20
+pt(-test_statB, df = 56)*2 #3.07e-13
+pt(-test_statC, df = 56)*2 #7.96e-11
  
 #compare to summary output
 summary(fit) 
-# BeachA p = 2.2e-16
+# BeachA p = < 2.2e-16 (1.56e-20)
 # BeachB p = 3.07e-13
 # BeachC p = 7.96e-11
-#B and C are the same, A is different but still very tiny. Not sure why or if it matters since still super small.
 
 #What is the associated null hyp? Reject or fail to reject?
 #The associated null hypothesis is that amount of open beach area does not change significantly over the years.
@@ -113,7 +112,7 @@ betas[4] + betas[5]
 #BeachC
 #rate of change (slope) is equal to :
 betas[4] + betas[6]
-#=-3.99 meaing that Beach C looses approximately 3.99 ha of open beach each year.    
+#=-3.99 meaning that Beach C looses approximately 3.99 ha of open beach each year.    
 
 #all have p-values <<< 0.05 so reject the null hypothesis that the beaches do not lose open beach area over time. There is a significant loss of open beach area over time in all 3 beaches, although Beach A is much more severe.
 ```
