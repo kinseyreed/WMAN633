@@ -1,0 +1,161 @@
+---
+title: "20210216_practice"
+author: "Kinsey Reed"
+date: "2/16/2021"
+output: html_document
+---
+**Creating Data**
+```{r}
+# randomly selecting coefficients for the intercept and slope coefficients
+set.seed(10) # random number generator seed, for consistent results each run
+betas <- rnorm(6)
+betas # inspect data-generating values vs. what you estimate later
+# sample size
+n <- 100
+# variance of the residuals
+s2 <- 3
+# randomly selecting predictor variables
+x1 <- rnorm(n) # continuous predictor
+x2 <- rnorm(n) # continuous predictor
+x3 <- sample(letters[1:3], n, T) # categorical predictor
+# simulating observations
+y <- betas[1] + betas[2] * x1 + betas[3] * x2 + betas[4] * x1 * x2 +
+betas[5] * ifelse(x3 == 'b', 1, 0) + betas[6] * ifelse(x3 == 'c', 1, 0) +
+rnorm(100, 0, sqrt(s2))
+# plotting observations against x1, just for fun
+plot(x = x1, y = y, ylab = 'y', xlab = 'x')
+# saving fake data
+out <- data.frame(y = y, x1 = x1, x2 = x2, x3 = x3)
+write.csv(out, 'Exam_1_Practice_Data.csv')
+
+```
+
+Importing dataset into R and inpecting the first several rows of data.
+
+```{r}
+data <- read.csv(file = 'Exam_1_Practice_Data.csv')
+
+head(data)
+```
+
+
+Fit a linear model that assumes your response is a function of x1, x2, and x3. Include an interaction
+between x1 and x2 only (i.e., do not include an interaction between your categorical variables and any
+other variables).
+
+```{r}
+fit <- lm(formula = y ~ x1 * x2 + x3, data = data)
+summary(fit)
+```
+
+3. Calculate residuals by hand (i.e., do not use the resid() function))
+
+y^ = b0 + b1x1 + b2x2 + b3(x3b) + b4(x3c) + b5x1x2
+residuals = observed (yi) - estimated (y^)
+
+```{r}
+data$b <- ifelse(data$x3 == 'b', 1, 0)
+data$c <- ifelse(data$x3 == 'c', 1, 0)
+
+b <- coef(fit)
+b
+
+new_y <- b[1] + b[2] * data$x1 + b[3] * data$x2 + b[4] * data$b + b[5] * data$c + b[6] * data$x1 * data$x2
+residuals <- data$y - new_y
+summary(residuals)
+```
+
+Interpret the effect of variable x2 when x1 = -1
+y^ = b0 + b1x1 + b2x2 + b3x3b + b4x3c + b5x1x2
+#collect terms associated with x2
+
+y = b0 + b1x1 +x2(b2 + b5x1) +b3(x3b) + b4(x3c)
+one unit change in x2 is equal to its slope, or b2 + b5x1
+
+```{r}
+b[3]+ b[6] * -1
+
+```
+
+
+5. Interpret the effect of variable x2 when x1 = 1
+
+```{r}
+b[3] + b[6] * 1
+```
+
+
+6. Plot predicted y against the observed range of x2. Assume level ‘a’ of your categorical variable and fix
+x1 at its mean.
+
+```{r}
+x2_range <- seq(min(data$x2), max(data$x2), length.out = 100)
+y_pred <- b[1] + b[2] * mean(data$x1) + b[3] * x2_range + b[6] * mean(data$x1) * x2_range
+plot(x = x2_range, y = y_pred, type = 'l', xlab = 'x2', ylab = 'y')
+```
+
+7. Interpret the effect of variable x3
+
+= slope coefficients x3b and x3c
+The difference in y (when all other variables held constant) between category b and a is 0.007804
+
+the difference in y (when all other variables held constant) between category c and a is -0.210479
+
+8. Describe how R codes the categorical variable x3. Demonstrate by reporting the first 5 values of
+variables derived from x3
+
+R creates k − 1 dummy variables, where k is the number of levels of your categorical variable. So here, R
+would create 2 dummy variables. A is set aside as the reference, so there is a dummy variable associated with
+variable b that equals 1 if a factor level is b and equals 0 otherwise. Similarly, there is another variable c that
+equals 1 if a factor level is c and equals 0 otherwise.
+
+```{r}
+cbind(data$x3[1:5],
+      ifelse(data$x3 == 'b', 1, 0)[1:5],
+      ifelse(data$x3 == 'c', 1, 0)[1:5])
+```
+
+
+Derive the test statistic and p-value associated with variable x2. What is the null hypothesis assumed
+by the lm() function? Do we reject or fail to reject this null hypothesis?
+
+```{r}
+#test statistic
+ts <- coef(fit)[3] / summary(fit)[['coefficients']][3, 2]
+ts; summary(fit)[['coefficients']][3, 3] #semicolon means new line
+
+#p value
+pt(ts, df = nrow(data) - length(coef(fit))) * 2 #df is n - # of coefficients
+
+```
+
+The null hypothesis is the slope coefficient associated with the variable x2 = 0. We reject the null hypothesis because the p value is smaller than any reasonable $\alpha$ 
+
+
+1. Be sure to play around with probability density functions we learned in class. E.G., assume you obtain
+the following realizations of random variable Y : y = (2.4, 5.2, 1.7), assume y are Gaussian distributed
+with mean = 2 and standard deviation = 3. Calculate the probability density of each of your three
+realizations.
+
+```{r}
+y <- c(2.4, 5.2, 1.7)
+dnorm(y, 2, 3)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
