@@ -8,7 +8,7 @@ This homework is all about verifying output of a fitted linear model. We will us
 
 
 1. Calculate the residuals. Use the summary() function applied to your numeric vector of residuals to verify that this matches the Residuals: quantiles reported from the summary of your fitted model. Plot a histogram of your residuals. Do they appear reasonably Gaussian? (we will go into detail on formal model checking later in the semester) (5 points)
-```{q1}
+```{r q1}
 beach <- read.csv("beach.csv")
 fit <- lm(formula = OpenBeach ~ BeachID * Year, data = beach)
 fit
@@ -31,7 +31,7 @@ hist(residuals1)
 
 2. Calculate test statistics for your regression coefficients. Verify by comparing to test statistics reported from model output. (5 points)
 
-``` {q2}
+``` {r q2}
 #test statistics for regression coefficients
 #est for slope coef for beach A, B, and C
 betas
@@ -61,7 +61,7 @@ summary(fit)
 ```
 
 3. Calculate p-values for your regression coefficients. Verify by comparing to p-values reported from model output. What are the associated null hypotheses? Do you reject or fail to reject these null hypotheses? Note: in the lecture slides I reported test statistics are t-distributed with n − 2 degrees of freedom. More generally, these test statistics are t-distributed with n − k degrees of freedom, where k is the number of regression coefficients in your linear model. (5 points)
-```{q3}
+```{r q3}
 #calc p values for regression coefs
 #df = n - k (k is # of regression coef from model)
 nrow(beach) #62
@@ -83,7 +83,7 @@ summary(fit)
 ```
 
 4. Select a single regression coefficient (your choice) and devise a null hypothesis that is different from the default in lm(). Report the test statistics, your p-value, and whether you reject or fail to reject your null hypothesis. (5 points)
-```{q4}
+```{r q4}
 #Using the slope coefficient for Beach A, I want to test the null hypothesis that B1 = 108 (i.e. the median open beach area) 
 #against the alternative that B1 < 108 (that a random value is under 108 ha)
 ts_108 <- (betas[4] - 108) / std_errorA
@@ -97,7 +97,7 @@ pt(ts_108, df = 56)
 ```
 5. Interpret output of your fitted model. Tell me how beach area does (or does not change) through time at each of the 3 beaches.
 
-```{q5}
+```{r q5}
 #essentially the same question as q5 in hw1?
 summary(fit)
 fit
