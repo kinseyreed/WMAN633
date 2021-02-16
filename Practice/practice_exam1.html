@@ -452,7 +452,7 @@ head(data)</code></pre>
 ## 4 4  2.676566 -0.2564784  1.1279536  a
 ## 5 5  2.983615  1.1017795 -1.2801546  a
 ## 6 6 -1.774597  0.7557815  1.1288682  b</code></pre>
-<p>Fit a linear model that assumes your response is a function of x1, x2, and x3. Include an interaction between x1 and x2 only (i.e., do not include an interaction between your categorical variables and any other variables).</p>
+<p>Fit a linear model that assumes your response is a function of x1, x2, and x3. Include an interaction between x1 and x2 only (i.e. do not include an interaction between your categorical variables and any other variables).</p>
 <pre class="r"><code>fit &lt;- lm(formula = y ~ x1 * x2 + x3, data = data)
 summary(fit)</code></pre>
 <pre><code>## 
