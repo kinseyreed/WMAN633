@@ -1,0 +1,124 @@
+---
+title: "20210217_Exam1"
+author: "Kinsey Reed"
+date: "2/17/2021"
+output: html_document
+---
+
+Included with this exam is a dataset called “Exam 1 Data.csv”, with the following variables:
+y: response variable, continuous
+x1: predictor variable, continuous
+x2: predictor variable, continuous
+x3: categorical variable with 3 levels: "a", "b", and "c"
+
+setwd(ch())
+1. Import this dataset into R and inspect the first several rows of your data
+
+```{r}
+data <- read.csv(file = "Exam 1 Data.csv")
+
+head(data)
+
+```
+
+
+2. Fit a linear model that assumes your response is a function of x1, x2, and x3. Include an interaction
+between x1 and x2 only (i.e., do not include an interaction between your categorical variables and any
+other variables).
+
+```{r}
+fit <- lm(formula = y ~ x1 * x2 + x3, data = data)
+fit
+
+
+```
+
+3. Interpret the effect of variable x1 when x2 = -1
+$$y = \beta0 + \beta1x1 + \beta2x2 + \beta3(x3b) + \beta4(x3c) + \beta5(x1x2)$$
+Combine like terms:
+$$y = \beta0 + x1(\beta1 + \beta5x2) + \beta2x2 + \beta3(x3b) + \beta4(x3c)$$
+
+The change in y associated with a 1 unit change in x1 when x2 = -1 is:
+```{r}
+#get coefficients
+B <- coef(fit)
+B
+
+#x1(B1 + B5x2)
+
+B[2] + B[6] * -1
+```
+4. Interpret the effect of variable x1 when x2 = 1
+
+Using the same formula, the change in y associated with a 1 unit change in x1 when x2 = 1 is:
+```{r}
+B[2] + B[6] * 1
+
+```
+
+5. Interpret the effect of variable x3.
+
+The difference in y (when all other variables held constant) between category b and a is -1.627162.
+
+The difference in y (when all other variables held constant) between category c and a is 0.002504.
+
+
+
+6. Describe how R codes the categorical variable x3. Demonstrate by reporting the first 5 values of
+variables derived from x3
+
+R creates k − 1 dummy variables, where k is the number of levels of your categorical variable. So here, R
+would create 2 dummy variables (3 - 1). A is set aside as the reference and absorbed into the intercept.
+The dummy variables that R are creates are as follows: variable b equals 1 if a factor level is b and equals 0 otherwise (a or c). The same goes for variable c, where the dummy variable equals 1 if the factor level is c and is 0 if it is a or b. 
+
+```{r}
+cbind(data$x3[1:5],
+      ifelse(data$x3 == 'b', 1, 0)[1:5],
+      ifelse(data$x3 == 'c', 1, 0)[1:5])
+```
+
+
+7. Derive the test statistic and p-value associated with the interaction between x1 and x2. What is the
+null hypothesis assumed by the "lm()" function? Do we reject or fail to reject this null hypothesis?
+Defend your answer.
+
+```{r}
+#std error for the slope coefficient of x1 * x2
+s <- summary(fit)[['coefficients']][6, 2]
+
+#test statistic for interaction between x1 and x2
+ts <- B[6] / s
+ts; summary(fit)[['coefficients']][6, 3] #semicolon means new line/in addition to (this note is so I can remember)
+
+#p value
+
+pval <- pt(-1 * abs(ts), df = nrow(data) - length(B)) * 2 #df is n - # of coefficients
+pval; summary(fit)[['coefficients']][6,4]
+
+```
+
+The null hypothesis is the slope coefficient associated with the variable x1 * x2 (the interaction of x1 and x2) = 0. In the cause of the $\alpha$ (or significance level) p < 0.05, we fail to reject the null hypothesis. However, the p value (0.099) is still small enough to generally infer that there is some degree of evidence to suggest that the null hypothesis could still be rejected. In the case of microbial ecology at least, we would still consider that p-value to be potentially significant.
+
+
+Other Questions
+
+8. assume you have the following realizations of random variable Y : y = (3, 8, 7) 
+Further assume realizations of the random variable Y are Gaussian distributed: y ∼ Gaussian(µ, σ2).
+Fix σ^2 = 1 and µ = 8, and evaluate the probability density at each of your 3 realizations.
+
+```{r}
+y <- c(3, 8, 7)
+dnorm(y, 8, 1)
+```
+
+9. What is a type I error? What is a p-value? How are the two quantities related?
+
+A type I error is the case where null hypothesis is actually true, but it falsely rejected.
+A p-value is the probabilty of observing a more extreme value of a test statistic, under the assumptions of a null hypothesis. If we observe an unlikely test statistic value, we will reject that null hypothesis. 
+These two quantities are related in that the p-value is used to evaluate the null hypothesis. We attempt to avoid type I errors by establishing an $\alpha$, i.e. significance level, and only rejecting the null hypothesis if the p value is smaller than the $\alpha$. 
+
+10. What is a fundamental assumption we must make to derive inference about regression coefficients of a
+linear model?
+
+In order to draw inference about regression coefficients in a linear model, we must assume a statistical model for the residuals. We have been using the Gaussian model, which assumes that the residuals are normally distributed (or Gaussian) e.g. y ∼ Gaussian(µ, σ2).
+
