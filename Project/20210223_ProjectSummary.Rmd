@@ -1,0 +1,76 @@
+---
+title: "Proj_Sum_WMAN633"
+author: "Kinsey Reed"
+date: "2/23/2021"
+output: word_document
+---
+
+## Study System and Experimental Design:  
+
+The study system is agricultural soil microbial communities before and after incubation with supplemental nitrogen.  
+
+Location/Layout:  
+
+* 7 random 3ft x 3ft corn plots in a 10m x 10m area of organic corn at the WVU organic farm. 
+* 7 random 3ft x 3ft corn plots in a 10m x 10m area of conventional corn at the WVU animal science farm  
+
+Field incubation soil (at both the organic and conventional farm) will be 10cm deep, 3in (7.5 cm) in diameter near the base of a corn stalk marked with PVC collars. These soil cores will be collected 5 days after injection with isotopic ammonium sulfate solution. 
+
+Lab incubation soil will be collected 10-cm deep on the same day that the field incubation is started. Soil will be put into sealed glass jars and isotopic ammonium sulfate solution will be added. This will incubate for 5 days.
+ 
+__Field Incubation Samples__  
+
+2 sites (conventional vs organic) x 7 plot replicates each = 14   
+
+__Laboratory Incubation Samples__  
+
+2 sites (conventional vs organic) x 7 plot replicates each  = 14 
+
+   
+ 
+Total ‘Treatments’ = 4 (Lab Incubation, Field Incubation, Organic Farm, Conventional Farm)
+ 
+
+## Questions to address with the data:  
+
+1. How different are the rates of nitrogen fertilizer assimilation (aka immobilization) and mineralization performed by soil microbial communities between conventional and organic farming systems?  
+
+2. How will the results differ between in situ and in vitro incubations?  
+
+
+## Description of data:  
+
+* Response variables will be the rate of nitrogen assimilation and mineralization (I could also just choose one or the other for this class project, but I will have both).
+      + These rates will have units of mg of N kg^-1^ soil day^-1^.  
+
+* Potential predictor variables of interest:
+    + type of incubation (field or lab)
+    + farm type (conventional or organic).  
+    
+
+* Other potential predictor variables I will have data for:
+    + soil moisture 
+    + soil microbial biomass
+    + soil C:N ratio
+    + plant (corn) measurements (height, mass)
+    + soil respiration (can also loosely be called microbial activity)
+    + soil pH
+    + soil organic matter content
+
+## Anything unique/interesting about the dataset:
+
+We will determine those N rates using a slightly altered 15N Pool Dilution method from Hart et al. 1994. I sent the necessary samples off to an isotope lab in MD awhile ago, so  hopefully I will get results in the next few weeks.
+
+There were several assumptions that had to be made to calculate those rates:
+1. Microbes have no preference between the normal and heavy nitrogen isotopes during transformations.
+2. The added heavy nitrogen can be assimilated by microbes, but not re-mineralized during the course of the incubation. 
+3. The rates of N transformations are constant throughout the incubation.
+4. The heavy nitrogen solution was distributed uniformly throughout the soil.
+
+These assumptions have varying degrees of truth to them and the experiment was designed to minimize their effects. The main problem was that the field soil incubation was difficult to ensure uniform distribution of heavy nitrogen, but we did our best with a meat injector!
+
+
+Not that it matters for this, but the main objective of my thesis project is to actually determine which specific microbial taxa assimilate the most N, but I won’t have the DNA sequencing data by the time this project is due. 
+
+
+
