@@ -17,12 +17,33 @@ head(data)
 
 For Mineralization/Immobilization
 ```{r}
+#one-way farm
+nm_fit1 <- lm(net_min ~ farm, data = data)
+
+#two-way farm and incubation
+nm_fit2 <- lm(net_min ~ incubation + farm, data = data)
+
+#interaction
 nm_fit <- lm(net_min ~ incubation * farm, data = data)
 summary(nm_fit)
+
+library(AICcmodavg)
+model.set <- list(nm_fit1, nm_fit2, nm_fit)
+model.names <- c("one", "two", "interaction")
+aictab(model.set, modnames = model.names)
+#interaction has lowest AIC score and is the best fit for the data.
+
+#check for homoscedasticity
+par(mfrow = c(2,2))
+plot(nm_fit)
+par(mfrow=c(1,1))
 
 #anova test (should be same)
 nm_aov <- anova(nm_fit)
 print(nm_aov)
+
+
+
 
 #alternatively could do this
 alt_aov <- aov(net_min ~ incubation * farm, data = data)
@@ -61,8 +82,30 @@ ggsave("nmin_plot.jpeg")
 
 For nitrification
 ```{r}
+
+
+#one-way farm
+nit_fit1 <- lm(net_nit ~ farm, data = data)
+
+#two-way farm and incubation
+nit_fit2 <- lm(net_nit ~ incubation + farm, data = data)
+#interaction
 nit_fit <- lm(net_nit ~ incubation * farm, data = data)
 summary(nit_fit)
+
+library(AICcmodavg)
+model.set <- list(nm_fit1, nm_fit2, nm_fit)
+model.names <- c("one", "two", "interaction")
+aictab(model.set, modnames = model.names)
+#interaction has lowest AIC score and is the best fit for the data.
+
+#check for homoscedasticity
+par(mfrow = c(2,2))
+plot(nit_fit)
+par(mfrow=c(1,1))
+
+
+
 naov <- anova(nit_fit)
 print(naov)
 
@@ -71,11 +114,6 @@ alt_aov2 <- aov(net_nit ~ incubation * farm, data = data)
 summary(alt_aov2)
 
 #post-hoc testing
-nitFarm_tukey <- TukeyHSD(alt_aov2, 'farm', conf.level = 0.95)
-print(nitFarm_tukey)
-
-nitInc_tukey <- TukeyHSD(alt_aov2, 'incubation', conf.level = 0.95)
-print(nitInc_tukey)
 
 nitInt_tukey <- TukeyHSD(alt_aov2, 'incubation:farm', conf.level = 0.95)
 print(nitInt_tukey)
