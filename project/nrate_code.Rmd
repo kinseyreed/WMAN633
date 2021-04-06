@@ -1,0 +1,104 @@
+---
+title: "KMR_QE_ProjectWriteUp"
+author: "Kinsey Reed"
+date: "4/5/2021"
+output: html_document
+---
+
+
+Load in dataset
+
+
+```{r}
+data <- read.csv('2020_data.csv')
+head(data)
+
+```
+
+For Mineralization/Immobilization
+```{r}
+nm_fit <- lm(net_min ~ incubation * farm, data = data)
+summary(nm_fit)
+
+#anova test (should be same)
+nm_aov <- anova(nm_fit)
+print(nm_aov)
+
+#alternatively could do this
+alt_aov <- aov(net_min ~ incubation * farm, data = data)
+summary(alt_aov)
+
+
+#post-hoc testing
+nm_tukey <- TukeyHSD(alt_aov, 'incubation:farm', conf.level = 0.95)
+print(nm_tukey)
+```
+
+Plotting Min/Immob
+```{r}
+library('interactions')
+library('ggplot2')
+
+
+
+
+nm_plot <- cat_plot(nm_fit, pred = farm, modx = incubation, 
+         plot.points = TRUE, 
+         data = data, 
+         jitter = 0,
+         errorbar.width = 0.3,
+         x.label = c('Farm Management Type'),
+         y.label = c('μg N per day'),
+         main.title = c('Net Nitrogen Mineralization Rate'),
+         legend.main = c('Incubation Type')
+         )
+nm_plot + theme(plot.title = element_text(hjust = 0.5))
+
+ggsave("nmin_plot.jpeg")
+```
+
+
+
+For nitrification
+```{r}
+nit_fit <- lm(net_nit ~ incubation * farm, data = data)
+summary(nit_fit)
+naov <- anova(nit_fit)
+print(naov)
+
+#alternatively could do this
+alt_aov2 <- aov(net_nit ~ incubation * farm, data = data)
+summary(alt_aov2)
+
+#post-hoc testing
+nitFarm_tukey <- TukeyHSD(alt_aov2, 'farm', conf.level = 0.95)
+print(nitFarm_tukey)
+
+nitInc_tukey <- TukeyHSD(alt_aov2, 'incubation', conf.level = 0.95)
+print(nitInc_tukey)
+
+nitInt_tukey <- TukeyHSD(alt_aov2, 'incubation:farm', conf.level = 0.95)
+print(nitInt_tukey)
+
+
+```
+
+```{r}
+
+nit_plot <- cat_plot(nit_fit, pred = farm, modx = incubation, 
+         plot.points = TRUE, 
+         data = data, 
+         jitter = 0,
+         errorbar.width = 0.3,
+         x.label = c('Farm Management Type'),
+         y.label = c('μg N per day'),
+         main.title = c('Net Nitrification Rate'),
+         legend.main = c('Incubation Type')
+         )
+
+nit_plot + theme(plot.title = element_text(hjust = 0.5))
+
+ggsave("nit_plot.jpeg")
+
+```
+
