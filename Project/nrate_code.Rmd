@@ -1,0 +1,68 @@
+---
+title: "KMR_QE_ProjectWriteUp"
+author: "Kinsey Reed"
+date: "4/5/2021"
+output: html_document
+---
+
+
+Load in dataset
+
+'describe variables
+
+```{r}
+data <- read.csv('2020_data.csv')
+head(data)
+
+```
+
+For Mineralization/Immobilization
+```{r}
+nm_fit <- lm(net_min ~ incubation + farm + farm:incubation, data = data)
+summary(nm_fit)
+aov <- anova(nm_fit)
+print(aov)
+
+```
+
+Plotting Min/Immob
+```{r}
+library('interactions')
+library('ggplot2')
+nm_plot <- cat_plot(nm_fit, pred = farm, modx = incubation, 
+         plot.points = TRUE, 
+         data = data, 
+         jitter = 0,
+         errorbar.width = 0.3,
+         x.label = c('Farm Management Type'),
+         y.label = c('μg N per day'),
+         main.title = c('Net Nitrogen Mineralization Rate'),
+         legend.main = c('Incubation Type')
+         )
+nm_plot + theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+
+
+For nitrification
+```{r}
+nit_fit <- lm(net_nit ~ incubation + farm + farm:incubation, data = data)
+summary(nit_fit)
+naov <- anova(nit_fit)
+print(naov)
+
+nit_plot <- cat_plot(nit_fit, pred = farm, modx = incubation, 
+         plot.points = TRUE, 
+         data = data, 
+         jitter = 0,
+         errorbar.width = 0.3,
+         x.label = c('Farm Management Type'),
+         y.label = c('μg N per day'),
+         main.title = c('Net Nitrification Rate'),
+         legend.main = c('Incubation Type')
+         )
+nit_plot + theme(plot.title = element_text(hjust = 0.5))
+
+```
+

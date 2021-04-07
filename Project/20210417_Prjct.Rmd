@@ -1,0 +1,189 @@
+---
+title: "Advancing field-based techniques to quantify nitrogen retention in agricultural soils"
+author: "Kinsey Reed"
+date: Davis College of Agriculture, Natural Resources, and Design, West Virginia University, Morgantown, WV
+output: pdf_document
+header-includes:
+- \usepackage{lineno}
+- \linenumbers
+- \usepackage{fancyhdr}
+- \pagestyle{fancy}
+- \usepackage{mathptmx}
+linestretch: 2
+indent: true
+---
+\newpage
+
+  The use of synthetic fertilizer in agriculture has become indispensable to feeding the global population. Unfortunately, a significant portion of the synthetic nitrogen applied to soil is lost through leaching, resulting in serious pollution. Therefore, finding ways to limit nitrogen losses while maintaining the global food supply is essential. When soil microbes assimilate nitrogen into their biomass, it is retained in the soil and is slowly released to crops over time. It has been proposed that some soil management strategies, such as no-till agriculture, may increase the amount of N retained in the soil through microbial immobilization. The reverse of immobilization is called mineralization, where N is made available in the soil solution by microbes, usually in the form of ammonium ($NH_4^+$). Following mineralization, another microbial process called nitrification converts that $NH_4^+$ into the ephemeral form nitrate ($NO_3^-$). Nitrate is the preferred source of N for plants and microbes, but it is also extremely susceptible to leaching. By extracting and differentiating soil N before and after an incubation with a known supply of inorganic fertilizer N, net immobilization and mineralization rates can be determined. These rates can be used to make inferences about how different soil management techniques alter N transformations in soil. 
+  
+  The aims of this work were to 1) determine if net N immobilization processes differ between laboratory-based and field incubations within the same method, and 2) assess how conventional and organic management affect soil N transformations.  The lab incubation is performed using soil removed from a field, homogenized, and held under controlled conditions, so it may be expected that the microbes transform N more quickly compared to field incubations, where the soil is kept in the ground. For the same reasons, the lab incubations may also have reduced variation between replicates relative to field incubation replicates. Where lab rates may simply represent the potential rates of N transformation, field rates may represent the true rates of N transformation. We also hypothesize that organic soil management will increase rates of N immobilization compared to conventional management due to previous research implicating that organic practices may stimulate microbial community growth.
+
+
+
+#### METHODS
+
+
+*Soil Collection and Experimental Incubation*
+
+
+   Soil from the WVU Organic Farm (39.65087, -79.93802) and the WVU Animal Science Farm (39.66076, -79.92940) was incubated in vitro and in situ in August 2020. At both farms, a random 10m x 10m area under maize cultivation was marked off, and soil cores (0 - 10cm depth) were collected from 7 replicate plots 0.914 m2 for lab incubation and initial N concentration extractions. Field incubation cores were left in-ground and injected with ammonium sulfate. Lab incubation cores were homogenized and incubated with ammonium sulfate in glass jars. The incubated soils were collected from the sample plots and jars after 5 days. Plant material was also collected at this time. Rhizosphere soil was separated from all samples by hand and used for analyses. From both treatments, incubations, and time points (t0 and t5) total soil N was extracted using $K_2SO_4$ and then quantified as $NH_4^+$-N, $NO_3^-$-N and $NO_2^-$-N using a SEAL AQ300 Discrete Nutrient Analyzer. 
+
+
+*Nitrogen Transformation Rate Calculation*
+
+
+Net mineralization (m) rates (negative values indicate net immobilization) and net nitrification rates (n) for both treatments and the two separate incubations were determined using the following equations (Hart et al. 1994):
+
+$$ m = \frac{{[NH_4^{+}]_{t0}} + {[NO_3^{-}]_{t0}}} {{[NH_4^{+}]_{t5}} + {[NO_3^{-}]_{t5}}} $$
+
+$$n =[NO_3^-]_{t5} - [NO_3^-]_{t0}$$
+
+
+*Data Analysis*
+
+
+ The rate data was fit using linear regression with Gaussian residuals. Our response variables were the N transformation rates (net mineralization/immobilization or nitrification) and our predictor variables were farm type (organic or conventional) and incubation type (field or lab). Differences between farms and incubations for both measures of N transformation rates were tested using a two-factor analysis of variance (ANOVA) test. AIC model selection determined that the interactive model most strongly influenced response compared to the additive or one factor models. Significance was determined at = 0.05using an F-test groupwise comparison which tests three null hypotheses 1) there is no difference in mean N rates between the field and lab incubations 2) there is no difference in mean N rates between organic and conventional farm and 3) the effect of the farm type does not depend on the type of incubation. All analyses of data are incorporated into the underlying Rmarkdown document, including figures. The underlying code for this manuscript can be found at [On Github](https://github.com/kinseyreed/WMAN633/blob/a7218636b3a67503cbbfdafb9af048d404cca4a3/project/nrate_code.Rmd) All statistics were performed using RStudio (v 1.4.116) in R (v 4.0.4).
+
+
+#### RESULTS
+
+```{r, echo = FALSE, eval = FALSE}
+data <- read.csv('2020_data.csv')
+
+#MINERALIZATION/IMMOBILIZATION
+#one-way farm
+nm_fit1 <- lm(net_min ~ farm, data = data)
+
+#two-way farm and incubation
+nm_fit2 <- lm(net_min ~ incubation + farm, data = data)
+
+#interaction
+nm_fit <- lm(net_min ~ incubation * farm, data = data)
+summary(nm_fit)
+
+#select model
+library('AICcmodavg')
+model.set <- list(nm_fit1, nm_fit2, nm_fit)
+model.names <- c("one", "two", "interaction")
+aictab(model.set, modnames = model.names)
+#interaction has lowest AIC score and is the best fit for the data.
+
+#check for homoscedasticity
+par(mfrow = c(2,2))
+plot(nm_fit)
+par(mfrow=c(1,1))
+
+#anova test (should be same)
+nm_aov <- anova(nm_fit)
+print(nm_aov)
+
+#alternatively could do this
+alt_aov <- aov(net_min ~ incubation * farm, data = data)
+summary(alt_aov)
+
+
+#post-hoc testing
+nm_tukey <- TukeyHSD(alt_aov, 'incubation:farm', conf.level = 0.95)
+print(nm_tukey)
+
+#NITRIFICATION
+#one-way farm
+nit_fit1 <- lm(net_nit ~ farm, data = data)
+
+#two-way farm and incubation
+nit_fit2 <- lm(net_nit ~ incubation + farm, data = data)
+#interaction
+nit_fit <- lm(net_nit ~ incubation * farm, data = data)
+summary(nit_fit)
+
+library(AICcmodavg)
+model.set <- list(nm_fit1, nm_fit2, nm_fit)
+model.names <- c("one", "two", "interaction")
+aictab(model.set, modnames = model.names)
+#interaction has lowest AIC score and is the best fit for the data.
+
+#check for homoscedasticity
+par(mfrow = c(2,2))
+plot(nit_fit)
+par(mfrow=c(1,1))
+
+
+
+naov <- anova(nit_fit)
+print(naov)
+
+#alternatively could do this
+alt_aov2 <- aov(net_nit ~ incubation * farm, data = data)
+summary(alt_aov2)
+
+#post-hoc testing
+
+nitInt_tukey <- TukeyHSD(alt_aov2, 'incubation:farm', conf.level = 0.95)
+print(nitInt_tukey)
+
+```
+
+We found that net N immobilization rates were significantly higher in samples incubated in the lab (because mineralization rates are negative, that infers a positive immobilization rate) (f(1)=12.71, p = 0.002). Additionally, the effect of incubation type depends on which farm soil was used (f(1)=6.324, p = 0.019), but there was no effect of farm type overall (f(1)=0.386, p = 0.540). In particular, a Tukey post-hoc test revealed that the lab incubation resulted in immobilization rates that were significantly higher than those from the field incubation in the organic soil (p = 0.001). This was not true for the conventional soil (p = 0.878). 
+
+
+
+```{r, echo = FALSE, eval = TRUE}
+library('interactions')
+library('ggplot2')
+data <- read.csv('2020_data.csv')
+nm_fit <- lm(net_min ~ incubation * farm, data = data)
+nm_plot <- cat_plot(nm_fit, pred = farm, modx = incubation, 
+         plot.points = TRUE, 
+         data = data, 
+         jitter = 0,
+         errorbar.width = 0.3,
+         x.label = c('Farm Management Type'),
+         y.label = c('ug N per day'),
+         main.title = c('Net Nitrogen Mineralization Rate'),
+         legend.main = c('Incubation Type')
+         )
+nm_plot <- nm_plot + theme(plot.title = element_text(hjust = 0.5),
+                plot.caption = element_text(hjust = 0))
+nm_plot <- nm_plot + labs(caption = 'Figure 1. Net nitrogen mineralization and immobilization rates (ug N per day) by farm type (conventional or organic) and incubation type (lab or field).')
+
+
+
+```
+
+
+
+
+We found a statistically significant difference in net nitrification rate by incubation type (f(1) = 4.82, p = 0.038) and by farm type (f(1) = 7.87, p = 0.010). The effect of incubation type on nitrification rates did not rely on which farm soil was used (f(1) = 2.22, p = 0.223). 
+
+
+
+```{r, echo = FALSE, eval = TRUE}
+nit_fit <- lm(net_nit ~ incubation * farm, data = data)
+
+nit_plot <- cat_plot(nit_fit, pred = farm, modx = incubation, 
+         plot.points = TRUE, 
+         data = data, 
+         jitter = 0,
+         errorbar.width = 0.3,
+         x.label = c('Farm Management Type'),
+         y.label = c('ug N per day'),
+         main.title = c('Net Nitrification Rate'),
+         legend.main = c('Incubation Type')
+         )
+
+nit_plot <- nit_plot + theme(
+  plot.title = element_text(hjust = 0.5),
+  plot.caption = element_text(hjust = 0)
+  )
+
+nit_plot <- nit_plot + labs(caption = 'Figure 2. Net nitrification rates (ug N per day) by farm type (conventional or organic) and incubation type (lab or field).')
+
+
+nit_plot
+```
+     
+     
+
+#### Works Cited
+
+Hart, S.C., J.M. Stark, E.A. Davidson, and M.K. Firestone. 1994. Nitrogen Mineralization, Immobilization, and Nitrification. Methods of Soil Analysis, Part 2. Soil Science Society of America, Madison, WI, USA.
