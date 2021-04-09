@@ -1,0 +1,117 @@
+---
+title: "hw5_qe"
+author: "Kinsey Reed"
+date: "3/29/2021"
+output: html_document
+---
+
+Included in this homework is an example occupancy modeling dataset obtained from camera trap data across
+6 mid-Atlantic states:
+Bobcat.csv: detection / non-detection of bobcat at each camera. Each row is a camera, and each column is
+a replicate survey (1 day).
+
+p covariates.csv: number of people (divided by 100) photographed. Each row is a camera, and each column
+is a replicate survey (1 day). This is a detection covariate.
+
+psi covariates.csv: the single covariate represents the proportion of area within 5km recently disturbed
+(e.g., logging, housing development). Treat this as a site-level covariate.
+
+1. Load data and place into an unmarkedFrameOccu object
+```{r}
+library(unmarked)
+data <- read.csv('Bobcat.csv')
+head(data)
+p_covs <- read.csv('p covariates.csv')
+site_covs <- read.csv('psi covariates.csv')
+
+#In order to place into object:
+#convert detection data to matrix
+data_m <- as.matrix(data)
+#for both covariates, make sure categorical variables are factors (none here though)
+#detection covariates as a list of data.frames
+class(p_covs)#already a data.frame
+#put into list
+det_covs <- list(
+  people = p_covs
+)
+#site-level covariates just need to be a data.frame, which it already is
+class(site_covs)
+
+#put all into object
+occu_data <- unmarkedFrameOccu(y = data, 
+                               siteCovs = site_covs, 
+                               obsCovs = det_covs)
+```
+
+2. Fit an occupancy model that assumes conditional detection probability is a function of the number of
+people photographed at a site, and occupancy probability is a function of disturbance within 5km.
+
+```{r}
+#remember order is: ~ detection covariate (+ * etc) ~ site covariate (Etc)
+fit <- occu(formula = ~ people ~ Dist_5km, data = occu_data)
+summary(fit)
+```
+
+3. Interpret the effect of the number of people photographed at each site on conditional detection probability of bobcat. Verity your interpretation in R.
+
+The 'slope coefficient' (or conditional detection probability) associated with the number of people photographed at each site is the log odds ratio (-0.061) associated with a 1-unit change in the number of people at each site. 
+
+The model is on the log odds scale, so interpretation is the same as the other binomial models and is a Bernoulli random variable.
+
+
+
+```{r}
+#log odds occupancy and detection probability
+coef(fit)
+
+#occupancy probability and detection probability (since on logit-scale) 
+plogis(coef(fit))
+
+
+
+rho_0 <- plogis(coef(fit)[3] + coef(fit)[4] * 0)
+rho_1 <- plogis(coef(fit)[3] + coef(fit)[4] * 1)
+
+log((rho_1 / (1 - rho_1)) / (rho_0 / (1 - rho_0))); coef(fit)[4]
+
+
+```
+
+
+
+4. Re-create the Wald test for the effect of disturbance within 5km. What is the null hypothesis? Do you
+reject or fail to reject this null hypothesis?
+
+The null hypothesis is that there is no effect of disturbance within 5km on the whether or not a site is occupied. Because the p-value here is well below 0.05, we can reject that null hypothesis, meaning that the probability of occupancy depends on whether there is an effect of disturbance within 5 km on bobcat site occupation.
+```{r}
+#coefficient divided by std error
+summary(fit)
+w <- -23.64 / 4.773
+w
+
+2 * pnorm(-1 * abs(w))
+#same p value: 7.31e-07
+```
+
+
+
+5. Predict and plot the effect of disturbance within 5km on bobcat occupancy probability. Do this over
+the range of observed disturbance within 5km.
+
+
+```{r}
+#make a data frame for occupancy (psi)
+new_psi <- data.frame(Dist_5km = seq(from = min(site_covs$Dist_5km),
+                                                    to = max(site_covs$Dist_5km), length.out = 100))
+
+predict <- predict(object = fit, newdata = new_psi, type = 'state')
+head(predict)
+
+#need link function here for y value?
+plot(y = predict$Predicted, x = new_psi$Dist_5km, xlab = 'Proportion Disturbed Area Within 5km',
+     ylab = 'Predicted Occupancy Probability', cex.axis = 1.5, cex.lab = 1.5,
+     ylim = c(min(predict$lower), max(predict$upper)), type = 'l')
+lines(x = new_psi$Dist_5km, y = predict$lower, lty = 2)
+lines(x = new_psi$Dist_5km, y = predict$upper, lty = 2)
+```
+
