@@ -146,6 +146,7 @@ nm_plot <- nm_plot + theme(plot.title = element_text(hjust = 0.5),
                 plot.caption = element_text(hjust = 0))
 nm_plot <- nm_plot + labs(caption = 'Figure 1. Net nitrogen mineralization and immobilization rates (ug N per day) by farm type (conventional or organic) and incubation type (lab or field).')
 
+nm_plot
 
 
 ```
