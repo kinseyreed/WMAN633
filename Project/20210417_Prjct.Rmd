@@ -97,10 +97,10 @@ nit_fit <- lm(net_nit ~ incubation * farm, data = data)
 summary(nit_fit)
 
 library(AICcmodavg)
-model.set <- list(nm_fit1, nm_fit2, nm_fit)
+model.set <- list(nit_fit1, nit_fit2, nit_fit)
 model.names <- c("one", "two", "interaction")
 aictab(model.set, modnames = model.names)
-#interaction has lowest AIC score and is the best fit for the data.
+#one way has lowest AIC score, but still used interaction to be consistent. Nitrification is not as important as mineralization
 
 #check for homoscedasticity
 par(mfrow = c(2,2))
