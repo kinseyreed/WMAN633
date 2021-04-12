@@ -148,7 +148,6 @@ nm_plot <- nm_plot + labs(caption = 'Figure 1. Net nitrogen mineralization and i
 
 nm_plot
 
-
 ```
 
 
