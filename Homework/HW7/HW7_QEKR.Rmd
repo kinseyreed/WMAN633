@@ -1,0 +1,164 @@
+---
+title: "20210412HW7_QE"
+author: "Kinsey Reed"
+date: "4/12/2021"
+output: html_document
+---
+
+Included in this homework is the same bobcat occupancy modeling dataset from homework 5:
+Bobcat.csv: detection / non-detection of bobcat at each camera. Each row is a camera, and each column is
+a replicate survey (1 day).
+p covariates.csv: number of people (divided by 100) photographed. Each row is a camera, and each column
+is a replicate survey (1 day). This is a detection covariate.
+psi covariates.csv: the single covariate represents the proportion of area within 5km recently disturbed
+(e.g., logging, housing development). Treat this as a site-level covariate.
+
+
+1. Load data and place into an unmarkedFrameOccu object
+
+
+```{r}
+library(unmarked)
+data <- read.csv('Bobcat.csv')
+head(data)
+p_covs <- read.csv('p covariates.csv')
+site_covs <- read.csv('psi covariates.csv')
+
+#In order to place into object:
+#convert detection data to matrix
+data_m <- as.matrix(data)
+#for both covariates, make sure categorical variables are factors (none here though)
+#detection covariates as a list of data.frames
+class(p_covs)#already a data.frame
+#put into list
+det_covs <- list(
+  people = p_covs
+)
+
+#site-level covariates just need to be a data.frame, which it already is
+class(site_covs)
+
+#put all into object
+occu_data <- unmarkedFrameOccu(y = data, 
+                               siteCovs = site_covs, 
+                               obsCovs = det_covs)
+```
+
+2. Fit the following candidate set of models:
+
+
+detection intercept-only + occupancy intercept-only
+```{r}
+fit1 <- occu(formula = ~ 1 ~ 1, data = occu_data)
+summary(fit1)
+```
+
+detection people + occupancy intercept-only
+```{r}
+fit2 <- occu(formula = ~ people ~ 1, data = occu_data)
+summary(fit2)
+```
+
+detection intercept-only  + occupancy disturbance
+```{r}
+fit3 <- occu(formula = ~ 1 ~ Dist_5km, data = occu_data)
+summary(fit3)
+```
+
+detection people + occupancy disturbance
+```{r}
+fit4 <- occu(formula = ~ people ~ Dist_5km, data = occu_data)
+summary(fit4)
+```
+
+3. Perform model selection with AIC. What is your top model? How do you know? Is there model selection
+uncertainty?
+
+The top model is detection: intercept-only and occupancy: disturbance. We know because it is listed first and has a delta AIC = 0. However, the model that includes detection:people and occupancy:disturbance has a delta AIC < 2, so it also offers substantial empirical support for the top model. Because of this, there is model selection uncertainty. 
+```{r}
+library(AICcmodavg)
+cand.list <- list(
+  IxI = fit1,
+  PxI = fit2,
+  IxD = fit3,
+  PxD = fit4
+)
+  
+models <- aictab(cand.set = cand.list, second.ord = F)
+head(models)
+```
+
+4. Average both the effect of people on detection, and disturbance on occupancy, over all models. Report
+model-averaged slope coefficients and 95% confidence intervals.
+```{r}
+#people on detection
+avg_P <- modavgShrink(cand.set = cand.list,
+             parm = 'people',
+             second.ord = F,
+             parm.type = 'detect'
+             )
+print("model averaged slope coefficient for the effect of people on detection")
+avg_P$Mod.avg.beta
+
+print("model averaged 95% CI for the effect of people on detection")
+avg_P$Lower.CL; avg_P$Upper.CL
+
+
+#disturbance on occupancy
+avg_D <- modavgShrink(cand.set = cand.list,
+                      parm = 'Dist_5km',
+                      second.ord = F,
+                      parm.type = 'psi')
+
+print("model averaged slope coefficient for the effect of disturbance on occupancy")
+avg_D$Mod.avg.beta
+print('model averaged 95% CI for the effect of disturbance on occupancy')
+avg_D$Lower.CL; avg_D$Upper.CL
+
+
+
+```
+
+5. Obtain and plot model-averaged predictions of occupancy probability and detection probability. Average
+over all models, and make predictions over the observed range of each variable.
+```{r}
+new.df <- data.frame(
+  people = seq(from = min(p_covs, na.rm = TRUE), to = max(p_covs, na.rm = TRUE), length.out = 100),
+  Dist_5km = seq(from= min(site_covs$Dist_5km), to = max(site_covs$Dist_5km), length.out = 100)
+)
+
+predict_occu <- modavgPred(cand.set = cand.list, 
+                    newdata = new.df, 
+                    second.ord = F, 
+                    parm.type = 'psi')
+predict_occu
+
+predict_detect <- modavgPred(cand.set = cand.list, 
+                    newdata = new.df, 
+                    second.ord = F, 
+                    parm.type = 'detect')
+predict_detect
+
+plot(y = predict_occu$mod.avg.pred,
+     x=new.df$Dist_5km,
+     type = 'l',
+     ylab = 'Occupancy Probability (Mod.Avgd)',
+     xlab='Disturbed Area Proportion (within 5 km)'
+     ) 
+lines(x = new.df$Dist_5km, y = predict_occu$lower.CL, lty = 2) 
+lines(x = new.df$Dist_5km, y = predict_occu$upper.CL, lty = 2)
+
+plot(y = predict_detect$mod.avg.pred,
+     x=new.df$people,
+     type = 'l',
+     ylab = 'Detection Probability (Mod.Avgd)',
+     xlab='People'
+     )
+lines(x = new.df$people, y = predict_detect$lower.CL, lty = 2)
+lines(x = new.df$people, y = predict_detect$upper.CL, lty = 2)
+
+
+#really small confidence intervals?
+
+```
+
