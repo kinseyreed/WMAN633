@@ -1,0 +1,130 @@
+---
+title: "HW8_QE"
+author: "Kinsey Reed"
+date: "4/19/2021"
+output: html_document
+header-includes:
+- \usepackage{mathptmx}
+---
+
+Included in this homework is the same N-mixture modeling dataset introduced in class:
+• sosp_nmix.csv: counts of song sparrow at each survey. Each row is a site, and each column is a
+replicate survey.
+• p_covs_nmix.csv: detection-level covariates recorded at each survey. Each row is a site, and each
+column is a replicate survey (1 day). xxx.1 represents covariate xxx recorded at survey 1, and xxx.2
+represents covariate xxx recorded at survey 2. For this exercise, we will use variables time (hours past
+midnight that the survey started) and sky (0 = clear skies; 1 = partly cloudy; 2 = overcast; 4 =
+precipitation). ***no 4's though
+• n_covs_nmix.csv: site-level covariates. Defined in the N-Mixture Models lecture, slide 34. For this
+exercise, we will use size (wetland size in ha) and type (acep = Agricultural Conservation Easement
+Program wetland; reference = Reference Wetland)
+
+
+
+1. Fit an N-mixture model that assumes abundance is a function of wetland size and type, and detection
+probability is a function of sky and time (5 points).
+
+```{r}
+library(unmarked)
+data <- read.csv('sosp_nmix.csv')
+head(data)
+p_covs <- read.csv('p_covs_nmix.csv')
+site_covs <- read.csv('n_covs_nmix.csv')
+
+#In order to place into object:
+#convert detection data to matrix
+data_m <- as.matrix(data)
+#for both covariates, make sure categorical variables are factors 
+
+#site covs as a data.frames
+#already a data.frame, but convert x2 to factor
+site_covs <- data.frame(
+  type = factor(site_covs$type),
+  size = site_covs$size
+)
+
+#obs/detection covariates as a list of data.frames
+#put into list
+
+det_covs <- list(
+  time = p_covs[, c('time.1', 'time.2')],
+  sky = data.frame(
+    sky1 = factor(p_covs$sky.1),
+    sky2 = factor(p_covs$sky.2)
+    )
+)
+
+#put all into object
+nmix_data <- unmarkedFramePCount(y = data_m, 
+                               siteCovs = site_covs, 
+                               obsCovs = det_covs)
+
+#fitting model
+fit <- pcount(~ time + sky ~ size + type, data = nmix_data, K = 100)
+summary(fit)
+
+```
+
+2. Write a function that calculates the sum of squared Pearson residuals from a fitted model. This test
+statistic can be calculated as 
+
+$$ X =  \sum\limits_{i=1}^N  \sum\limits_{j=1}^J \frac{(y_{ij} - \hat{\lambda}_i\hat{p_{ij}})^2} {\hat{\lambda}_i\hat{p_{ij}}(1- \hat{p}_{ij})}  $$
+
+where yi is your observed count; λˆi is expected abundance at site i; and pˆij is estimated detection
+probability at site i during replicate survey j. Note that both λˆi and pˆij can be obtained using the
+predict() function (10 points).
+
+```{r}
+
+chisq <- function(mod){
+  obs <- getY(mod@data) #observed
+  EA <- predict(object = mod, type = 'state') 
+  DP <- predict(object = mod, type = 'det') #need to convert DP so that has two columns for each rep survey instead of one long list
+  DP1 <- seq_len(nrow(DP)) %% 2
+  DP_rep1 <- DP[DP1 == 1, ]  #only even rows; i.e. rep survey 1
+  DP_rep2 <- DP[DP1 == 0, ] #only odd rows; i.e. rep survey 2
+  DPfinal <- cbind(DP_rep1$Predicted, DP_rep2$Predicted) #now have df with two columns, one for each rep survey
+  ex <- EA$Predicted * DPfinal #expected
+  ts <- ((obs - ex) ^ 2) / (ex * (1 - DPfinal))
+  return(sum(ts))
+}
+chisq(fit)
+
+```
+
+
+3. Use the parboot() function in R to simulate the distribution of this test statistic under the assumption
+that your fitted model is the data-generating model. Simulate 1000 values of the test statistic. Note
+that this may take several minutes (5 points).
+
+```{r}
+sims <- parboot(object = fit, statistic = chisq, nsim = 1000)
+```
+
+4. Plot the distribution of the simulated test statistic. Include in this plot the value of your test statistic
+calculated from your fitted model. 
+What is the null hypothesis you are testing when conducting model checking? 
+
+The null hypothesis is that the fitted model is the data-generating model, i.e. that the predicted model and the observed model are equal.
+
+Do you reject or fail to reject this null hypothesis? 
+
+We reject the null hypothesis because the p-value is extremely low.
+
+What are the implications for how well your model fits the data (5 points)?
+This means that the predicted model is different than the observed model.The implication is that the model does not fit the data well. 
+
+
+
+```{r}
+hist(sims@t.star[,1], xlab = 'chisq',
+     main = 'simulated test statistic distribution',
+     xlim = c(0, 1050),
+     cex.axis = 1.5, cex.lab = 1.5, cex.main = 1.5)
+lines(x = rep(chisq(fit), 2),
+      y = c(0,1000),
+      col = 'red', lwd = 3)
+
+sum(sims@t.star[,1] > chisq(fit)) / 1000
+``` 
+
