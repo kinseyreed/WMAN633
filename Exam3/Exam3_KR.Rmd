@@ -1,0 +1,207 @@
+---
+title: "Exam3_QE"
+author: "Kinsey Reed"
+date: "5/5/2021"
+output: html_document
+---
+
+Included with this exam is an example occupancy modeling dataset:
+detect.csv: detection / non-detection data
+sitecovs.csv: site-level covariates (1 covariate per column)
+obscovs1.csv: observation-level covariates
+obscovs2.csv: observation-level covariates
+
+Use this dataset to answer the following questions (8 points each):
+1. Describe a sampling procedure that may have given rise to this dataset.
+
+This dataset could have been obtained by visiting N = 100 sites, and performing J = 3 replicate surveys. At every site, the occupancy covariates x1 and x2 were recorded. Detection/non-detection was recorded at each site during each replicate survey, along with the detection covariates (obscovs1 and obscovs2).
+
+2. Import data and fit an occupancy model that assumes detection probability is an additive function of
+obscovs1 and obscovs2; and that occupancy probability is an additive function of x1 and x2.
+
+```{r}
+library(unmarked)
+data <- read.csv('detect.csv')
+obs_covs1 <- read.csv('obscovs1.csv')
+obs_covs2 <- read.csv('obscovs2.csv')
+site_covs <- read.csv('sitecovs.csv')
+
+data_m <- as.matrix(data)
+
+det_covs <- list(
+  covs1 = obs_covs1,
+  covs2 = obs_covs2
+  )
+
+occu_data <- unmarkedFrameOccu(y = data_m, 
+                               siteCovs = site_covs, 
+                               obsCovs = det_covs)
+
+fit <- occu(~ covs1 + covs2 ~ x1 + x2, data = occu_data)
+summary(fit)
+```
+
+
+3. Use contrasts to determine if occupancy probability different when x1 = 2 vs. when x1 = -2?
+
+P is greater than 0.05, so we fail to reject the null hypothesis at an alpha of 0.05. In other words, occupancy probabilty is not different when x1 = 2 and when x1 = -2.
+
+```{r}
+CM <- matrix(c(0, 2, 0,
+               0, -2, 0), 
+             nrow = 2, byrow = TRUE)
+
+cnt <- linearComb(obj = fit, coefficients = CM, type = 'state')
+cnt
+
+pnorm(-1 * abs(coef(cnt) / SE(cnt))) * 2
+
+```
+
+
+4. Use model selection to compare the following 4 models. Which model is the "top" model? How do you
+know?
+(a) ∼ obscovs1 + obscovs2 ∼ x1 + x2
+(b) ∼ obscovs1 + obscovs2 ∼ x1
+(c) ∼ obscovs1 + obscovs2 ∼ x2
+(d) ∼ obscovs1 + obscovs2 ∼ 1
+
+Model C is the top model with the smallest AIC, but model A is also very close.
+```{r}
+library(AICcmodavg)
+fit2 <- occu(~ covs1 + covs2 ~ x1, data = occu_data)
+fit3 <-occu(~ covs1 + covs2 ~ x2, data = occu_data)
+fit4 <- occu(~ covs1 + covs2 ~ 1, data = occu_data)
+
+cand.list <- list(
+  fit1 = fit,
+  fit2 = fit2,
+  fit3 = fit3,
+  fit4 = fit4
+)
+  
+models <- aictab(cand.set = cand.list, second.ord = F)
+head(models)
+```
+
+
+5. Obtain model-averaged estimates of x1. What conclusions do you draw regarding this variable?
+
+The model-averaged confidence intervals overlap 0, so it is possible/likely that x1 does not have an influence on occupancy probability.
+```{r}
+modavgShrink(cand.set = cand.list,
+             parm = 'x1',
+             second.ord = F,
+             parm.type = 'psi'
+             )
+
+```
+
+6. Plot model-averaged predictions of how detection probability changes across the observed range of
+obscovs2.
+```{r}
+
+new.df <- data.frame(
+  covs2 = seq(from = min(obs_covs2, na.rm = TRUE), to = max(obs_covs2, na.rm = TRUE), length.out = 100),
+  covs1 = seq(from = min(obs_covs1, na.rm = TRUE), to = max(obs_covs1, na.rm = TRUE), length.out = 100)
+)
+
+predict_detect <- modavgPred(cand.set = cand.list, 
+                    newdata = new.df, 
+                    second.ord = F, 
+                    parm.type = 'detect')
+predict_detect
+
+plot(y = predict_detect$mod.avg.pred,
+     x=new.df$covs2,
+     type = 'l',
+     ylab = 'Detection Probability (Mod.Avgd)',
+     xlab ='obscovs2',
+     ylim = c(min(predict_detect$lower.CL), max(predict_detect$upper.CL))
+     )
+lines(x = new.df$covs2, y = predict_detect$lower.CL, lty = 2)
+lines(x = new.df$covs2, y = predict_detect$upper.CL, lty = 2)
+
+```
+
+7. Evaluate the fit of the top model using the sum of squared Pearson’s residuals as a test statistic. A
+function for evaluating this test statistic is provided at the bottom of the exam.
+
+The test statistic falls at about the middle of the distribution. The p is = 0.379, so we do not reject the null hypothesis that the fitted model is the data-generating model.
+
+```{r}
+chisq <- function(mod){ # mod is fitted model
+obs <- getY(mod@data) # observed
+ex <- fitted(mod) # expected
+ts <- (ex - obs) ^ 2 / # chi-square statistic
+(ex * (1 - ex))
+return(sum(ts))
+}
+chisq(fit3)
+
+
+sims <- parboot(object = fit3, statistic = chisq, nsim = 1000)
+hist(sims@t.star[,1], xlab = 'chisq',
+     main = 'simulated test statistic distribution',
+     xlim = c(0, max(sims@t.star[,1])),
+     cex.axis = 1.5, cex.lab = 1.5, cex.main = 1.5)
+lines(x = rep(chisq(fit3), 2),
+      y = c(0, max(sims@t.star[,1])),
+      col = 'red', lwd = 3)
+
+sum(sims@t.star[,1] > chisq(fit)) / 1000
+```
+
+
+
+Other questions (8 points each):
+8. What is the closure assumption? What are the consequences of violating the closure assumption? Tell
+me why violating the closure assumption results in these consequences.
+
+The closure assumption is that a species is present or absent across all replicate surveys, regardless of whether it was actually detected or not.When the closure assumption is violated (i.e. the presence/absence of individuals is not constant across all replicate surveys) occupancy probability is overestimated and  detection probability is underestimated. Detection probability is underestimated because there was a failure to detect the target at a replicate survey when it is actually absent. Occupancy probability thus gets overestimated.
+
+
+9. Assume you have variable p that is bounded between 0 and 1. Further, assume p = 0.25. What link
+function would you use to transform p to the real number line? What is the analogous vale of p = 0.25
+on the real number line?
+
+
+You would use the logit-link function to map 0.25 (bounded between 0 and 1) to the real number line as follows:
+
+```{r}
+log(0.25/(1 - 0.25))
+```
+
+
+
+10. Assume you have a random variable that can only obtain values of 0, 1, 2, ..., ∞. What probability
+distribution might you use to model such data? What is (are) the parameter(s) of this probability
+distribution? What link function might you use if you wanted to model that parameter as a linear
+function of variables?
+
+Poisson distributions can be used to model data that is "countably infinite" as presented in the question (that is the support). The parameter of the Poisson distribution is that lambda (count intensity) is > 0. You would use the log link function in order to map non-negative numbers to the entire real number line.
+
+
+
+11. Discuss null hypothesis significance testing within the context of model checking. Be sure to include
+the following phrases in your description:
+• assumptions of the null hypothesis
+• test statistic
+• p-value
+• reject or fail to reject the null hypothesis
+
+Null hypothesis significance testing in the context of model checking can be used to infer whether your model is a useful representation of the data generating process. Using simulated test statistics obtained from your model, you can compare the distribution of that simulated data to the observed data. A p-value can be calculated to determine the probability of observing a more extreme value of the test statistic under the assumptions of the null hypothesis. Whether or not the model test statistic falls at about the middle of the distribution, you can reject or fail to reject the null hypothesis i.e. that the fitted model is the data generating model.
+
+
+For questions 12 and 13, assume the following linear model (6 points each):
+y = β0 + β1x1 + β2x2 + β3x3 + β4x2x3
+where x1 is categorical and is coded = 1 if variable x1 obtains level “b”, and is coded = 0 if x1 obtains level
+“a”; and x2 and x3 are both continuous random variables.
+
+12. interpret the coefficient β1
+
+β1 is the difference between levels ‘b’ and levels ‘a’.
+
+13. how does the response variable change in response to a 1-unit change in x2?
+
+The response variable changes β2 units for every 1-unit increase in x2, when x3 is = 0.
